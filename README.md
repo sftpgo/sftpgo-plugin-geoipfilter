@@ -1,4 +1,4 @@
-# SFTPGO geoipfilter plugin
+# SFTPGo geoipfilter plugin
 
 ![Build](https://github.com/sftpgo/sftpgo-plugin-geoipfilter/workflows/Build/badge.svg?branch=main&event=push)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
