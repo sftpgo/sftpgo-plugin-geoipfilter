@@ -20,27 +20,27 @@ func TestFilter(t *testing.T) {
 	require.NoError(t, err)
 	defer f.Close()
 
-	err = f.CheckIP("1.1.1.1") // AU
+	err = f.CheckIP("1.1.1.1", "") // AU
 	assert.NoError(t, err)
-	err = f.CheckIP("2.2.2.2") // FR
+	err = f.CheckIP("2.2.2.2", "") // FR
 	assert.Error(t, err)
 
-	err = f.CheckIP("")
+	err = f.CheckIP("", "")
 	assert.NoError(t, err)
 	// private ranges
-	err = f.CheckIP("10.8.0.1")
+	err = f.CheckIP("10.8.0.1", "")
 	assert.NoError(t, err)
-	err = f.CheckIP("192.168.255.1")
+	err = f.CheckIP("192.168.255.1", "")
 	assert.NoError(t, err)
-	err = f.CheckIP("172.16.127.128")
+	err = f.CheckIP("172.16.127.128", "")
 	assert.NoError(t, err)
 
 	f.AllowedCountries = make(map[string]bool)
 	f.DeniedCountries = map[string]bool{"FR": true}
 
-	err = f.CheckIP("2.2.2.2") // FR
+	err = f.CheckIP("2.2.2.2", "") // FR
 	assert.Error(t, err)
-	err = f.CheckIP("1.1.1.1")
+	err = f.CheckIP("1.1.1.1", "")
 	assert.NoError(t, err)
 }
 

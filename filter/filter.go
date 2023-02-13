@@ -67,7 +67,7 @@ func (f *Filter) getCountryCode(ip net.IP) (string, error) {
 }
 
 // CheckIP returns an error if the specified IP is not allowed
-func (f *Filter) CheckIP(ipAddr string) error {
+func (f *Filter) CheckIP(ipAddr, protocol string) error {
 	ip := net.ParseIP(ipAddr)
 	if ip == nil {
 		logger.AppLogger.Warn("error parsing the provided IP address", "ip", ipAddr)
