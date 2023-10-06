@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	version   = "1.0.3-dev"
+	version   = "1.0.4"
 	envPrefix = "SFTPGO_PLUGIN_GEOIPFILTER_"
 )
 
