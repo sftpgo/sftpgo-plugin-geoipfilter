@@ -70,7 +70,7 @@ var (
 						EnvVars:     []string{envPrefix + "DENIED_COUNTRIES"},
 					},
 				},
-				Action: func(c *cli.Context) error {
+				Action: func(_ *cli.Context) error {
 					logger.AppLogger.Info("starting sftpgo-plugin-geoipfilter", "version", getVersionString())
 					allowed := make(map[string]bool)
 					denied := make(map[string]bool)
