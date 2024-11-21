@@ -58,6 +58,25 @@ func TestFilter(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestParseIPAddr(t *testing.T) {
+	ipAddr, err := parseIPAddr("192.168.1.1")
+	require.NoError(t, err)
+	assert.True(t, ipAddr.IsPrivate())
+	ipAddr, err = parseIPAddr("fe80::c523:8ca6:67cc:e1ea%Ethernet 3")
+	require.NoError(t, err)
+	assert.Equal(t, "fe80::c523:8ca6:67cc:e1ea", ipAddr.String())
+	assert.True(t, ipAddr.IsLinkLocalUnicast())
+	ipAddr, err = parseIPAddr("212.71.246.123")
+	require.NoError(t, err)
+	assert.False(t, ipAddr.IsPrivate())
+	ipAddr, err = parseIPAddr("2345:0425:2CA1:0000:0000:0567:5673:23b5")
+	require.NoError(t, err)
+	assert.False(t, ipAddr.IsPrivate())
+	ipAddr, err = parseIPAddr("fd7a:115c:a1e0:ab12:4843:cd96:626b:430b")
+	require.NoError(t, err)
+	assert.True(t, ipAddr.IsPrivate())
+}
+
 func BenchmarkIPLookup(b *testing.B) {
 	reader, err := maxminddb.Open("../GeoLite2-Country.mmdb")
 	if err != nil {

@@ -17,6 +17,7 @@ package filter
 import (
 	"fmt"
 	"net"
+	"net/netip"
 	"sync"
 
 	"github.com/oschwald/maxminddb-golang"
@@ -82,9 +83,9 @@ func (f *Filter) getCountryCode(ip net.IP) (string, error) {
 
 // CheckIP returns an error if the specified IP is not allowed
 func (f *Filter) CheckIP(ipAddr, _ string) error {
-	ip := net.ParseIP(ipAddr)
-	if ip == nil {
-		logger.AppLogger.Warn("error parsing the provided IP address", "ip", ipAddr)
+	ip, err := parseIPAddr(ipAddr)
+	if err != nil {
+		logger.AppLogger.Warn("error parsing the provided IP address", "ip", ipAddr, "err", err)
 		return nil
 	}
 	if ip.IsPrivate() {
@@ -111,4 +112,12 @@ func (f *Filter) CheckIP(ipAddr, _ string) error {
 	}
 	logger.AppLogger.Debug("country not allowed", "ip", ipAddr, "country", country)
 	return fmt.Errorf("country %s is not allowed, ip %s", country, ipAddr)
+}
+
+func parseIPAddr(ipAddr string) (net.IP, error) {
+	addr, err := netip.ParseAddr(ipAddr)
+	if err != nil {
+		return nil, err
+	}
+	return net.IP(addr.AsSlice()), nil
 }
