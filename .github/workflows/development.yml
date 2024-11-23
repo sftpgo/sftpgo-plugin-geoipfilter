@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  id-token: write
+  contents: read
+
 env:
   GO_VERSION: '1.23'
 
@@ -25,10 +29,7 @@ jobs:
 
       - name: Build
         run: |
-          sudo apt-get update -q -y
-          sudo apt-get install -q -y osslsigncode
           go install github.com/tc-hib/go-winres@latest
-
           GIT_COMMIT=`git describe --always --dirty`
           LATEST_TAG=$(git describe --always --tags $(git rev-list --tags --max-count=1))
           NUM_COMMITS_FROM_TAG=$(git rev-list ${LATEST_TAG}.. --count)
@@ -37,23 +38,11 @@ jobs:
 
           mkdir bin
           go-winres simply --arch amd64 --product-version $VERSION-$GIT_COMMIT --file-version $FILE_VERSION --file-description "SFTPGo plugin geoipfilter" --product-name "SFTPGo plugin geoipfilter" --copyright "AGPL-3.0" --original-filename sftpgo-plugin-geoipfilter-windows-x86_64.exe --icon res/icon.ico
-          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.commitHash=`git describe --always --dirty` -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.buildDate=`date -u +%FT%TZ`" -o sftpgo-plugin-geoipfilter-windows-x86_64.exe
+          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.commitHash=`git describe --always --dirty` -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.buildDate=`date -u +%FT%TZ`" -o bin/sftpgo-plugin-geoipfilter-windows-x86_64.exe
           go-winres simply --arch arm64 --product-version $VERSION-$GIT_COMMIT --file-version $FILE_VERSION --file-description "SFTPGo plugin geoipfilter" --product-name "SFTPGo plugin geoipfilter" --copyright "AGPL-3.0" --original-filename sftpgo-plugin-geoipfilter-windows-arm64.exe --icon res/icon.ico
-          CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build -trimpath -ldflags "-s -w -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.commitHash=`git describe --always --dirty` -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.buildDate=`date -u +%FT%TZ`" -o sftpgo-plugin-geoipfilter-windows-arm64.exe
+          CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build -trimpath -ldflags "-s -w -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.commitHash=`git describe --always --dirty` -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.buildDate=`date -u +%FT%TZ`" -o bin/sftpgo-plugin-geoipfilter-windows-arm64.exe
           go-winres simply --arch 386 --product-version $VERSION-$GIT_COMMIT --file-version $FILE_VERSION --file-description "SFTPGo plugin geoipfilter" --product-name "SFTPGo plugin geoipfilter" --copyright "AGPL-3.0" --original-filename sftpgo-plugin-geoipfilter-windows-x86.exe --icon res/icon.ico
-          CGO_ENABLED=0 GOOS=windows GOARCH=386 go build -trimpath -ldflags "-s -w -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.commitHash=`git describe --always --dirty` -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.buildDate=`date -u +%FT%TZ`" -o sftpgo-plugin-geoipfilter-windows-x86.exe
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            mv sftpgo-plugin-geoipfilter-windows-x86_64.exe bin/
-            mv sftpgo-plugin-geoipfilter-windows-arm64.exe bin/
-            mv sftpgo-plugin-geoipfilter-windows-x86.exe bin/
-          else
-            echo $CERT_DATA | base64 --decode > cert.pfx
-            osslsigncode sign -pkcs12 cert.pfx -pass $CERT_PASS -n "SFTPGo plugin geoipfilter" -i "https://github.com/sftpgo/sftpgo-plugin-geoipfilter" -ts "http://timestamp.sectigo.com" -h sha2 -in sftpgo-plugin-geoipfilter-windows-x86_64.exe -out bin/sftpgo-plugin-geoipfilter-windows-x86_64.exe
-            osslsigncode sign -pkcs12 cert.pfx -pass $CERT_PASS -n "SFTPGo plugin geoipfilter" -i "https://github.com/sftpgo/sftpgo-plugin-geoipfilter" -ts "http://timestamp.sectigo.com" -h sha2 -in sftpgo-plugin-geoipfilter-windows-arm64.exe -out bin/sftpgo-plugin-geoipfilter-windows-arm64.exe
-            osslsigncode sign -pkcs12 cert.pfx -pass $CERT_PASS -n "SFTPGo plugin geoipfilter" -i "https://github.com/sftpgo/sftpgo-plugin-geoipfilter" -ts "http://timestamp.sectigo.com" -h sha2 -in sftpgo-plugin-geoipfilter-windows-x86.exe -out bin/sftpgo-plugin-geoipfilter-windows-x86.exe
-            rm -f cert.pfx
-          fi
-
+          CGO_ENABLED=0 GOOS=windows GOARCH=386 go build -trimpath -ldflags "-s -w -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.commitHash=`git describe --always --dirty` -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.buildDate=`date -u +%FT%TZ`" -o bin/sftpgo-plugin-geoipfilter-windows-x86.exe
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.commitHash=`git describe --always --dirty` -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.buildDate=`date -u +%FT%TZ`" -o bin/sftpgo-plugin-geoipfilter-linux-amd64
           CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags "-s -w -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.commitHash=`git describe --always --dirty` -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.buildDate=`date -u +%FT%TZ`" -o bin/sftpgo-plugin-geoipfilter-linux-arm64
           CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.commitHash=`git describe --always --dirty` -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.buildDate=`date -u +%FT%TZ`" -o bin/sftpgo-plugin-geoipfilter-linux-armv7
@@ -61,15 +50,64 @@ jobs:
           CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -trimpath -ldflags "-s -w -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.commitHash=`git describe --always --dirty` -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.buildDate=`date -u +%FT%TZ`" -o bin/sftpgo-plugin-geoipfilter-darwin-amd64
           CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags "-s -w -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.commitHash=`git describe --always --dirty` -X github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd.buildDate=`date -u +%FT%TZ`" -o bin/sftpgo-plugin-geoipfilter-darwin-arm64
         shell: bash
-        env:
-          CERT_DATA: ${{ secrets.CERT_DATA }}
-          CERT_PASS: ${{ secrets.CERT_PASS }}
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: sftpgo-plugin-geoipfilter
           path: bin
+
+  sign-windows-binaries:
+    name: Sign Windows binaries
+    if: ${{ github.event_name != 'pull_request' }}
+    environment: signing
+    needs: [build]
+    runs-on: windows-latest
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sftpgo-plugin-geoipfilter
+          path: ${{ github.workspace }}/bin
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sign
+        uses: azure/trusted-signing-action@v0.5.0
+        with:
+          endpoint: https://eus.codesigning.azure.net/
+          trusted-signing-account-name: nicola
+          certificate-profile-name: SFTPGo
+          files: |
+            ${{ github.workspace }}\bin\sftpgo-plugin-geoipfilter-windows-x86_64.exe
+            ${{ github.workspace }}\bin\sftpgo-plugin-geoipfilter-windows-arm64.exe
+            ${{ github.workspace }}\bin\sftpgo-plugin-geoipfilter-windows-x86.exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+          exclude-environment-credential: true
+          exclude-workload-identity-credential: true
+          exclude-managed-identity-credential: true
+          exclude-shared-token-cache-credential: true
+          exclude-visual-studio-credential: true
+          exclude-visual-studio-code-credential: true
+          exclude-azure-cli-credential: false
+          exclude-azure-powershell-credential: true
+          exclude-azure-developer-cli-credential: true
+          exclude-interactive-browser-credential: true
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sftpgo-plugin-geoipfilter
+          path: bin
+          overwrite: true
 
   golangci-lint:
     name: golangci-lint
