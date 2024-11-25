@@ -7,7 +7,9 @@ This plugin allows to accept/deny connections based on the the geographical loca
 
 ## Supported databases
 
-This plugin can read MaxMind [GeoLite2](http://dev.maxmind.com/geoip/geoip2/geolite2/) and [GeoIP2](http://www.maxmind.com/en/geolocation_landing) databases. You need to download a country database in MMDB format.
+This plugin can read MaxMind GeoLite2 and GeoIP2 [databases](https://dev.maxmind.com/geoip/). You need to download a country database in MMDB format.
+
+We are part of the MaxMind Affiliate Program, if you need to purchase a commercial database please use our referral [link](https://maxmind.pxf.io/JKzRme).
 
 ## Configuration
 
