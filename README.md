@@ -9,8 +9,6 @@ This plugin allows to accept/deny connections based on the the geographical loca
 
 This plugin can read MaxMind GeoLite2 and GeoIP2 [databases](https://dev.maxmind.com/geoip/). You need to download a country database in MMDB format.
 
-We are part of the MaxMind Affiliate Program, if you need to purchase a commercial database please use our referral [link](https://maxmind.pxf.io/JKzRme).
-
 ## Configuration
 
 The plugin can be configured within the `plugins` section of the SFTPGo configuration file. To start the plugin you have to use the `serve` subcommand. Here is the usage.
