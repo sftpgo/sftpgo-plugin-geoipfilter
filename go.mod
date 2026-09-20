@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-plugin v1.8.0
-	github.com/oschwald/maxminddb-golang v1.13.1
+	github.com/oschwald/maxminddb-golang/v2 v2.6.0
 	github.com/sftpgo/sdk v0.1.9
 	github.com/stretchr/testify v1.12.1
 	github.com/urfave/cli/v2 v2.27.7

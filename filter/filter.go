@@ -15,15 +15,21 @@
 package filter
 
 import (
+	"errors"
 	"fmt"
-	"net"
 	"net/netip"
 	"sync"
 
-	"github.com/oschwald/maxminddb-golang"
+	"github.com/oschwald/maxminddb-golang/v2"
 
 	"github.com/sftpgo/sftpgo-plugin-geoipfilter/logger"
 )
+
+type countryRecord struct {
+	Country struct {
+		ISOCode string `maxminddb:"iso_code"`
+	} `maxminddb:"country"`
+}
 
 // Filter implements the ipfilter interface
 type Filter struct {
@@ -36,17 +42,24 @@ type Filter struct {
 
 // Reload loads the database file
 func (f *Filter) Reload() error {
-	f.Close()
 	reader, err := maxminddb.Open(f.DbFilePath)
 	if err != nil {
-		logger.AppLogger.Error("unable to load the database file", "path", f.DbFilePath, "err", err)
+		logger.AppLogger.Error("unable to load the database file, the previous database, if any, is preserved",
+			"path", f.DbFilePath, "err", err)
 		return err
 	}
-	logger.AppLogger.Debug("database loaded", "path", f.DbFilePath)
-	f.mu.Lock()
-	defer f.mu.Unlock()
+	logger.AppLogger.Debug("database loaded", "path", f.DbFilePath, "type", reader.Metadata.DatabaseType)
 
+	f.mu.Lock()
+	old := f.reader
 	f.reader = reader
+	f.mu.Unlock()
+
+	if old != nil {
+		if err := old.Close(); err != nil {
+			logger.AppLogger.Warn("unable to close the previous database", "err", err)
+		}
+	}
 	return nil
 }
 
@@ -56,26 +69,24 @@ func (f *Filter) Close() {
 	defer f.mu.Unlock()
 
 	if f.reader != nil {
-		err := f.reader.Close()
-		logger.AppLogger.Debug("closed db file", "err", err)
+		if err := f.reader.Close(); err != nil {
+			logger.AppLogger.Warn("unable to close the database file", "err", err)
+		} else {
+			logger.AppLogger.Debug("database file closed")
+		}
 		f.reader = nil
 	}
 }
 
-func (f *Filter) getCountryCode(ip net.IP) (string, error) {
+func (f *Filter) getCountryCode(ip netip.Addr) (string, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
 	if f.reader == nil {
-		return "", nil
+		return "", errors.New("database not loaded")
 	}
-	var record struct {
-		Country struct {
-			ISOCode string `maxminddb:"iso_code"`
-		} `maxminddb:"country"`
-	}
-	err := f.reader.Lookup(ip, &record)
-	if err != nil {
+	var record countryRecord
+	if err := f.reader.Lookup(ip).Decode(&record); err != nil {
 		return "", err
 	}
 	return record.Country.ISOCode, nil
@@ -85,10 +96,10 @@ func (f *Filter) getCountryCode(ip net.IP) (string, error) {
 func (f *Filter) CheckIP(ipAddr, _ string) error {
 	ip, err := parseIPAddr(ipAddr)
 	if err != nil {
-		logger.AppLogger.Warn("error parsing the provided IP address", "ip", ipAddr, "err", err)
+		logger.AppLogger.Warn("error parsing the provided IP address, the IP will be allowed", "ip", ipAddr, "err", err)
 		return nil
 	}
-	if ip.IsPrivate() {
+	if isNonPublic(ip) {
 		return nil
 	}
 	country, err := f.getCountryCode(ip)
@@ -114,10 +125,16 @@ func (f *Filter) CheckIP(ipAddr, _ string) error {
 	return fmt.Errorf("country %s is not allowed, ip %s", country, ipAddr)
 }
 
-func parseIPAddr(ipAddr string) (net.IP, error) {
+var sharedAddressSpace = netip.MustParsePrefix("100.64.0.0/10")
+
+func isNonPublic(ip netip.Addr) bool {
+	return !ip.IsGlobalUnicast() || ip.IsPrivate() || sharedAddressSpace.Contains(ip)
+}
+
+func parseIPAddr(ipAddr string) (netip.Addr, error) {
 	addr, err := netip.ParseAddr(ipAddr)
 	if err != nil {
-		return nil, err
+		return netip.Addr{}, err
 	}
-	return net.IP(addr.AsSlice()), nil
+	return addr.WithZone("").Unmap(), nil
 }

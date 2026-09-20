@@ -18,10 +18,12 @@ import (
 	"os"
 
 	"github.com/sftpgo/sftpgo-plugin-geoipfilter/cmd"
+	"github.com/sftpgo/sftpgo-plugin-geoipfilter/logger"
 )
 
 func main() {
 	if err := cmd.Execute(); err != nil {
+		logger.AppLogger.Error("plugin exited with error", "err", err)
 		os.Exit(1)
 	}
 }

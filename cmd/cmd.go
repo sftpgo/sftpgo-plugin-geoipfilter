@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	version   = "1.0.15"
+	version   = "1.1.0"
 	envPrefix = "SFTPGO_PLUGIN_GEOIPFILTER_"
 )
 
@@ -76,15 +76,15 @@ var (
 					denied := make(map[string]bool)
 					var allowedList []string
 					var deniedList []string
-					for _, country := range strings.Split(allowedCountries, ",") {
-						country = strings.TrimSpace(country)
+					for country := range strings.SplitSeq(allowedCountries, ",") {
+						country = strings.ToUpper(strings.TrimSpace(country))
 						if country != "" {
 							allowed[country] = true
 							allowedList = append(allowedList, country)
 						}
 					}
-					for _, country := range strings.Split(deniedCountries, ",") {
-						country = strings.TrimSpace(country)
+					for country := range strings.SplitSeq(deniedCountries, ",") {
+						country = strings.ToUpper(strings.TrimSpace(country))
 						if country != "" {
 							denied[country] = true
 							deniedList = append(deniedList, country)

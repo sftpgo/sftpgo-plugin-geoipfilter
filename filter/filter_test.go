@@ -15,17 +15,19 @@
 package filter
 
 import (
-	"net"
+	"net/netip"
 	"testing"
 
-	"github.com/oschwald/maxminddb-golang"
+	"github.com/oschwald/maxminddb-golang/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+const maxmindDbPath = "../GeoLite2-Country.mmdb"
+
 func TestFilter(t *testing.T) {
 	f := Filter{
-		DbFilePath: "../GeoLite2-Country.mmdb",
+		DbFilePath: maxmindDbPath,
 		AllowedCountries: map[string]bool{
 			"AU": true,
 		},
@@ -58,6 +60,31 @@ func TestFilter(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestReloadFailure(t *testing.T) {
+	f := Filter{
+		DbFilePath: maxmindDbPath,
+		AllowedCountries: map[string]bool{
+			"AU": true,
+		},
+	}
+	err := f.Reload()
+	require.NoError(t, err)
+	defer f.Close()
+
+	err = f.CheckIP("2.2.2.2", "") // FR
+	assert.Error(t, err)
+
+	// a failed reload must preserve the previously loaded database
+	f.DbFilePath = "missing.mmdb"
+	err = f.Reload()
+	require.Error(t, err)
+
+	err = f.CheckIP("2.2.2.2", "") // FR
+	assert.Error(t, err)
+	err = f.CheckIP("1.1.1.1", "") // AU
+	assert.NoError(t, err)
+}
+
 func TestParseIPAddr(t *testing.T) {
 	ipAddr, err := parseIPAddr("192.168.1.1")
 	require.NoError(t, err)
@@ -75,30 +102,35 @@ func TestParseIPAddr(t *testing.T) {
 	ipAddr, err = parseIPAddr("fd7a:115c:a1e0:ab12:4843:cd96:626b:430b")
 	require.NoError(t, err)
 	assert.True(t, ipAddr.IsPrivate())
+	// v4-mapped addresses are unmapped
+	ipAddr, err = parseIPAddr("::ffff:192.168.1.1")
+	require.NoError(t, err)
+	assert.True(t, ipAddr.Is4())
+	assert.True(t, ipAddr.IsPrivate())
 }
 
 func BenchmarkIPLookup(b *testing.B) {
-	reader, err := maxminddb.Open("../GeoLite2-Country.mmdb")
+	reader, err := maxminddb.Open(maxmindDbPath)
 	if err != nil {
 		panic(err)
 	}
 	defer reader.Close()
 
-	ip1 := net.ParseIP("1.1.1.1")
-	ip2 := net.ParseIP("2.2.2.2")
+	ip1 := netip.MustParseAddr("1.1.1.1")
+	ip2 := netip.MustParseAddr("2.2.2.2")
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		var record struct {
 			Country struct {
 				ISOCode string `maxminddb:"iso_code"`
 			} `maxminddb:"country"`
 		}
-		err = reader.Lookup(ip1, &record)
+		err = reader.Lookup(ip1).Decode(&record)
 		if err != nil {
 			panic(err)
 		}
-		err = reader.Lookup(ip2, &record)
+		err = reader.Lookup(ip2).Decode(&record)
 		if err != nil {
 			panic(err)
 		}
